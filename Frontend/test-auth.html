@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Authentication Test Tool</h1>
+        
+        <div class="test-section">
+            <h3>1. Register User</h3>
+            <input type="text" id="regFullname" placeholder="Full Name" value="Test User">
+            <input type="email" id="regEmail" placeholder="Email" value="test@example.com">
+            <input type="tel" id="regPhone" placeholder="Phone" value="1234567890">
+            <input type="password" id="regPassword" placeholder="Password" value="password123">
+            <select id="regRole">
+                <option value="student">Student</option>
+                <option value="recruiter">Recruiter</option>
+            </select>
+            <button onclick="registerUser()">Register</button>
+            <div id="registerResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Login User</h3>
+            <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
+            <input type="password" id="loginPassword" placeholder="Password" value="password123">
+            <select id="loginRole">
+                <option value="student">Student</option>
+                <option value="recruiter">Recruiter</option>
+            </select>
+            <button onclick="loginUser()">Login</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Check Authentication</h3>
+            <button onclick="checkAuth()">Check Auth Status</button>
+            <div id="authResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Job Exists</h3>
+            <input type="text" id="jobId" placeholder="Job ID" value="">
+            <button onclick="testJobExists()">Test Job</button>
+            <div id="jobTestResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test Job Application</h3>
+            <input type="text" id="applyJobId" placeholder="Job ID" value="">
+            <button onclick="applyForJob()">Apply for Job</button>
+            <div id="applyResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test Profile</h3>
+            <button onclick="getProfile()">Get Profile</button>
+            <button onclick="updateProfile()">Update Profile</button>
+            <div id="profileResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Logout</h3>
+            <button onclick="logoutUser()">Logout</button>
+            <div id="logoutResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function registerUser() {
+            try {
+                const userData = {
+                    fullname: document.getElementById('regFullname').value,
+                    email: document.getElementById('regEmail').value,
+                    phoneNumber: document.getElementById('regPhone').value,
+                    password: document.getElementById('regPassword').value,
+                    role: document.getElementById('regRole').value
+                };
+
+                const response = await fetch(`${API_BASE}/user/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('registerResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('registerResult').textContent = 'Error: ' + error.message;
+                document.getElementById('registerResult').className = 'result error';
+            }
+        }
+
+        async function loginUser() {
+            try {
+                const loginData = {
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value,
+                    role: document.getElementById('loginRole').value
+                };
+
+                const response = await fetch(`${API_BASE}/user/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(loginData)
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('loginResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('loginResult').textContent = 'Error: ' + error.message;
+                document.getElementById('loginResult').className = 'result error';
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/user/me`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('authResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('authResult').textContent = 'Error: ' + error.message;
+                document.getElementById('authResult').className = 'result error';
+            }
+        }
+
+        async function testJobExists() {
+            try {
+                const jobId = document.getElementById('jobId').value;
+                const response = await fetch(`${API_BASE}/job/test/${jobId}`);
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('jobTestResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('jobTestResult').textContent = 'Error: ' + error.message;
+                document.getElementById('jobTestResult').className = 'result error';
+            }
+        }
+
+        async function applyForJob() {
+            try {
+                const jobId = document.getElementById('applyJobId').value;
+                const response = await fetch(`${API_BASE}/application/apply/${jobId}`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('applyResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('applyResult').textContent = 'Error: ' + error.message;
+                document.getElementById('applyResult').className = 'result error';
+            }
+        }
+
+        async function getProfile() {
+            try {
+                const response = await fetch(`${API_BASE}/profile/me`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('profileResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('profileResult').textContent = 'Error: ' + error.message;
+                document.getElementById('profileResult').className = 'result error';
+            }
+        }
+
+        async function updateProfile() {
+            try {
+                const profileData = {
+                    fullName: 'Updated Test Student',
+                    email: 'student@test.com',
+                    phoneNumber: '9876543210',
+                    skills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'TypeScript'],
+                    experience: '2 years',
+                    education: 'Master\'s in Computer Science',
+                    resumeLink: 'updated-resume.pdf',
+                    bio: 'Experienced software developer with expertise in modern web technologies.',
+                    location: 'San Francisco, CA',
+                    linkedin: 'https://linkedin.com/in/updatedstudent',
+                    github: 'https://github.com/updatedstudent',
+                    portfolio: 'https://updatedstudent.dev'
+                };
+
+                const response = await fetch(`${API_BASE}/profile/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(profileData)
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('profileResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('profileResult').textContent = 'Error: ' + error.message;
+                document.getElementById('profileResult').className = 'result error';
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                const response = await fetch(`${API_BASE}/user/logout`, {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('logoutResult');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = data.success ? 'result success' : 'result error';
+            } catch (error) {
+                document.getElementById('logoutResult').textContent = 'Error: ' + error.message;
+                document.getElementById('logoutResult').className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

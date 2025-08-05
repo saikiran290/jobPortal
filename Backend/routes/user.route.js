@@ -9,6 +9,13 @@ router.route("/register").post(register);
 router.route("/login").post(login);
 router.route("/logout").get(logout);
 router.route("/profile/update").post(isAuthenticated,updateProfile);
+router.route("/me").get(isAuthenticated, (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "User is authenticated",
+    userId: req.id 
+  });
+});
 
 
 export default router;

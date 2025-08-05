@@ -5,13 +5,15 @@ import {
   getAppliedJobs,
   getApplicants,
   updateStatus,
+  getRecruiterApplications,
 } from "../controllers/application.controller.js";
 
 const router = express.Router();
 
 router.get("/apply/:id", isAuthenticated, applyJob);
 router.get("/get", isAuthenticated, getAppliedJobs);
-router.get("/:id/applicants", isAuthenticated, getApplicants);
-router.post("/status/:id/update", isAuthenticated, updateStatus);
+router.get("/recruiter", isAuthenticated, getRecruiterApplications);
+router.get("/applicants/:id", isAuthenticated, getApplicants);
+router.put("/status/:id", isAuthenticated, updateStatus);
 
 export default router;
