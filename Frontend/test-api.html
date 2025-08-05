@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Portal API Test Tool</h1>
+        
+        <div class="test-section">
+            <h3>1. Test Jobs Endpoint</h3>
+            <button onclick="testGetJobs()">Get All Jobs</button>
+            <div id="jobsResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Companies Endpoint</h3>
+            <button onclick="testGetCompanies()">Get All Companies</button>
+            <div id="companiesResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Add Test Company</h3>
+            <input type="text" id="companyName" placeholder="Company Name" value="Test Company">
+            <input type="text" id="companyDescription" placeholder="Description" value="A test company for development">
+            <input type="text" id="companyLocation" placeholder="Location" value="New York, NY">
+            <button onclick="addTestCompany()">Add Company</button>
+            <div id="addCompanyResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Add Test Job</h3>
+            <input type="text" id="jobTitle" placeholder="Job Title" value="Software Engineer">
+            <textarea id="jobDescription" placeholder="Job Description" rows="3">We are looking for a talented software engineer to join our team...</textarea>
+            <input type="text" id="jobSalary" placeholder="Salary" value="$80,000 - $120,000">
+            <input type="text" id="jobLocation" placeholder="Location" value="New York, NY">
+            <input type="text" id="jobType" placeholder="Job Type" value="full-time">
+            <input type="number" id="jobExperience" placeholder="Experience (years)" value="3">
+            <input type="text" id="jobPosition" placeholder="Position" value="Software Engineer">
+            <input type="text" id="companyId" placeholder="Company ID (get from step 2)">
+            <button onclick="addTestJob()">Add Job</button>
+            <div id="addJobResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+
+        async function testGetJobs() {
+            try {
+                const response = await fetch(`${API_BASE}/job/get`);
+                const data = await response.json();
+                document.getElementById('jobsResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('jobsResult').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function testGetCompanies() {
+            try {
+                const response = await fetch(`${API_BASE}/company/all`);
+                const data = await response.json();
+                document.getElementById('companiesResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('companiesResult').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function addTestCompany() {
+            try {
+                const companyData = {
+                    name: document.getElementById('companyName').value,
+                    description: document.getElementById('companyDescription').value,
+                    location: document.getElementById('companyLocation').value
+                };
+
+                const response = await fetch(`${API_BASE}/company/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(companyData)
+                });
+                const data = await response.json();
+                document.getElementById('addCompanyResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('addCompanyResult').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        async function addTestJob() {
+            try {
+                const jobData = {
+                    title: document.getElementById('jobTitle').value,
+                    description: document.getElementById('jobDescription').value,
+                    requirements: ['JavaScript', 'React', 'Node.js'],
+                    salary: document.getElementById('jobSalary').value,
+                    location: document.getElementById('jobLocation').value,
+                    jobType: document.getElementById('jobType').value,
+                    experience: parseInt(document.getElementById('jobExperience').value),
+                    position: document.getElementById('jobPosition').value,
+                    companyId: document.getElementById('companyId').value
+                };
+
+                const response = await fetch(`${API_BASE}/job/post`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jobData)
+                });
+                const data = await response.json();
+                document.getElementById('addJobResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('addJobResult').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

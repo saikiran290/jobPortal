@@ -17,20 +17,47 @@ export const postJob = async (req, res) => {
 
     const userId = req.id; // From auth middleware
 
+    console.log('Job data received:', req.body);
+    
     if (
       !title || !description || !requirements || !salary || !location || !jobType ||
       experience === undefined || !position || !companyId
     ) {
+      console.log('Missing fields:', {
+        title: !!title,
+        description: !!description,
+        requirements: !!requirements,
+        salary: !!salary,
+        location: !!location,
+        jobType: !!jobType,
+        experience: experience !== undefined,
+        position: !!position,
+        companyId: !!companyId
+      });
       return res.status(400).json({
         message: "Missing job fields",
         success: false,
+        missing: {
+          title: !title,
+          description: !description,
+          requirements: !requirements,
+          salary: !salary,
+          location: !location,
+          jobType: !jobType,
+          experience: experience === undefined,
+          position: !position,
+          companyId: !companyId
+        }
       });
     }
 
+    // Ensure requirements is an array
+    const requirementsArray = Array.isArray(requirements) ? requirements : [requirements];
+    
     const job = new Job({
       title,
       description,
-      requirements,
+      requirements: requirementsArray,
       salary,
       location,
       jobType,
@@ -66,7 +93,7 @@ export const getAllJobs = async (req, res) => {
 
     const jobs = await Job.find(query)
       .populate("company")
-      .populate("created_by");
+      .populate("created_by", "fullname email");
 
     res.status(200).json({ success: true, jobs });
   } catch (error) {
@@ -83,7 +110,7 @@ export const getJobById = async (req, res) => {
       .populate("created_by")
       .populate({
         path: "applications",
-        populate: { path: "userId", select: "-password" }
+        populate: { path: "applicant", select: "-password" }
       });
 
     if (!job) {
@@ -104,12 +131,15 @@ export const getJobById = async (req, res) => {
 export const getAdminJobs = async (req, res) => {
   try {
     const adminId = req.id;
-    const jobCount = await Job.countDocuments({ created_by: adminId });
+    const jobs = await Job.find({ created_by: adminId })
+      .populate("company")
+      .populate("created_by", "fullname email");
 
     res.status(200).json({
       success: true,
-      totalJobs: jobCount,
-      message: "Job count fetched",
+      jobs,
+      totalJobs: jobs.length,
+      message: "Admin jobs fetched successfully",
     });
   } catch (error) {
     console.error("ADMIN JOBS ERROR:", error.message);

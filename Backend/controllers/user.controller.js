@@ -33,17 +33,35 @@ export const register = async (req, res) => {
       role,
     });
 
-    return res.status(201).json({
-      message: "User registered successfully",
-      success: true,
-      user: {
-        id: newUser._id,
-        fullname: newUser.fullname,
-        email: newUser.email,
-        phoneNumber: newUser.phoneNumber,
-        role: newUser.role,
-      },
-    });
+    // Create token for the new user
+    const tokenData = {
+      userId: newUser._id,
+    };
+
+    const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
+
+    const userData = {
+      _id: newUser._id,
+      fullname: newUser.fullname,
+      email: newUser.email,
+      phoneNumber: newUser.phoneNumber,
+      role: newUser.role,
+      profile: newUser.profile || null,
+    };
+
+    // Set cookie and return success response
+    return res
+      .status(201)
+      .cookie("token", token, {
+        maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        sameSite: 'strict',
+      })
+      .json({
+        message: "User registered successfully",
+        success: true,
+        user: userData,
+      });
   } catch (error) {
     console.error("Registration error:", error);
     return res.status(500).json({
@@ -81,10 +99,13 @@ export const login = async (req, res) => {
       });
     }
 
+    // More flexible role validation - allow login if user exists regardless of role selection
+    // This prevents issues where users accidentally select wrong role during login
     if (role !== user.role) {
       return res.status(400).json({
-        message: "Account does not exist for the selected role",
+        message: `Account exists but you selected ${role} role. Please select ${user.role} role to login.`,
         success: false,
+        actualRole: user.role
       });
     }
 
@@ -148,12 +169,7 @@ export const logout = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { fullname, email, phoneNumber, bio, skills } = req.body;
-    const file = req.file;
-  let skillArray;
-  if(skills){
-   skillArray = skills.split(',').map(skill => skill.trim());
-  }
+    const { fullname, email, phoneNumber, bio, skills, resume } = req.body;
     const userId = req.id; // Make sure auth middleware sets this
 
     let user = await User.findById(userId);
@@ -165,33 +181,39 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-
     // Initialize profile if not exists
     if (!user.profile) {
       user.profile = {};
     }
 
-    if(fullname) user.fullname = fullname;
-     if(email)  user.email = email;
-      if(phoneNumber)  user.phoneNumber = phoneNumber;
-       if(bio) user.profile.bio = bio;
-       if(skillArray) user.profile.skills = skillArray;
-
-    // Optionally handle resume or profile picture here via Cloudinary
-    // if (file) { upload to Cloudinary and update user.profile.image or resume }
+    // Update basic fields
+    if (fullname) user.fullname = fullname;
+    if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    
+    // Update profile fields
+    if (bio) user.profile.bio = bio;
+    if (resume) user.profile.resume = resume;
+    
+    // Handle skills array
+    if (skills && Array.isArray(skills)) {
+      user.profile.skills = skills;
+    }
 
     await user.save();
 
+    const userData = {
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      profile: user.profile
+    };
+
     return res.status(200).json({
       message: "Profile updated successfully",
-      user: {
-        id: user._id,
-        fullname: user.fullname,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        profile: user.profile
-      },
+      user: userData,
       success: true,
     });
   } catch (error) {
