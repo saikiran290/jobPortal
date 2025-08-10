@@ -1,16 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import axios from 'axios';
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'https://jobportal-8vla.onrender.com',
-        changeOrigin: true,
-      },
-    },
-  },
-}) 
+const API = axios.create({
+  baseURL: import.meta.env.MODE === 'development'
+    ? 'http://localhost:8000'
+    : 'https://jobportal-8vla.onrender.com',
+  withCredentials: true,
+});
+
+export default API;
